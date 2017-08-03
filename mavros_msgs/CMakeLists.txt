@@ -66,6 +66,7 @@ add_service_files(
   WaypointClear.srv
   WaypointPull.srv
   WaypointPush.srv
+  WaypointPushSingle.srv
   WaypointSetCurrent.srv
 )
 

@@ -1,0 +1,8 @@
+# Send a waypoint to device
+# Takes waypoint and sequence number
+# Returns success
+
+mavros_msgs/Waypoint waypoint
+uint8 seq
+---
+bool success

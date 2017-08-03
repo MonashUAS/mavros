@@ -24,7 +24,7 @@ except ImportError:
     print("Waring: 'show' action disabled. install python-prettytable", file=sys.stderr)
     no_prettytable = True
 
-
+#M.push_single(fghjfdhg)
 
 def get_wp_file_io(args):
     return M.QGroundControlWP()
@@ -131,6 +131,24 @@ def do_load(args):
             _load_call(wps)
 
 
+def do_load_single(args):
+    wps = []
+    wps_file = get_wp_file_io(args)
+    with args.file:
+        wps = [w for w in wps_file.read(args.file)]
+
+    try:
+        ret = M.push_single(waypoint=wps[args.seq], seq=args.seq)
+    except rospy.ServiceException as ex:
+        fault(ex)
+
+    if not ret.success:
+        fault("Request failed. Check mavros logs")
+
+    print_if(args.verbose, "Waypoint transfered.")
+
+
+
 def do_dump(args):
     done_evt = threading.Event()
     def _write_file(topic):
@@ -186,6 +204,11 @@ def main():
     load_args.set_defaults(func=do_load)
     load_args.add_argument('-p', '--preserve-home', action='store_true', help="Preserve home location (WP 0, APM only)")
     load_args.add_argument('file', type=argparse.FileType('rb'), help="input file (QGC/MP format)")
+
+    load_single_args = subarg.add_parser('load_single', help="load waypoint from file")
+    load_single_args.set_defaults(func=do_load_single)
+    load_single_args.add_argument('seq', type=int, help="waypoint seq id")
+    load_single_args.add_argument('file', type=argparse.FileType('rb'), help="input file (QGC/MP format)")
 
     pull_args = subarg.add_parser('pull', help="pull waypoints from FCU")
     pull_args.set_defaults(func=do_pull)

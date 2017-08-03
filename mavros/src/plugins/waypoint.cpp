@@ -23,6 +23,7 @@
 #include <mavros_msgs/WaypointClear.h>
 #include <mavros_msgs/WaypointPull.h>
 #include <mavros_msgs/WaypointPush.h>
+#include <mavros_msgs/WaypointPushSingle.h>
 
 namespace mavros {
 namespace std_plugins {
@@ -151,6 +152,7 @@ public:
 		wp_list_pub = wp_nh.advertise<mavros_msgs::WaypointList>("waypoints", 2, true);
 		pull_srv = wp_nh.advertiseService("pull", &WaypointPlugin::pull_cb, this);
 		push_srv = wp_nh.advertiseService("push", &WaypointPlugin::push_cb, this);
+		push_single_srv = wp_nh.advertiseService("push_single", &WaypointPlugin::push_single_cb, this);
 		clear_srv = wp_nh.advertiseService("clear", &WaypointPlugin::clear_cb, this);
 		set_cur_srv = wp_nh.advertiseService("set_current", &WaypointPlugin::set_cur_cb, this);
 
@@ -182,6 +184,7 @@ private:
 	ros::Publisher wp_list_pub;
 	ros::ServiceServer pull_srv;
 	ros::ServiceServer push_srv;
+  ros::ServiceServer push_single_srv;
 	ros::ServiceServer clear_srv;
 	ros::ServiceServer set_cur_srv;
 
@@ -732,6 +735,30 @@ private:
 		go_idle();	// same as in pull_cb
 		return true;
 	}
+    bool push_single_cb(mavros_msgs::WaypointPushSingle::Request &req,
+                 mavros_msgs::WaypointPushSingle::Response &res)
+    {
+        unique_lock lock(mutex);
+
+        if (wp_state != WP::IDLE)
+            // Wrong initial state, other operation in progress?
+            return false;
+
+        wp_state = WP::TXLIST;
+
+        send_waypoints.clear();
+        send_waypoints.reserve(1);
+        send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
+
+        restart_timeout_timer();
+        lock.unlock();
+
+        res.success = wait_push_all();
+        lock.lock();
+
+        go_idle();	// same as in pull_cb
+        return true;
+    }
 
 	bool clear_cb(mavros_msgs::WaypointClear::Request &req,
 			mavros_msgs::WaypointClear::Response &res)
