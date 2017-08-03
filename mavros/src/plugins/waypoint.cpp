@@ -659,6 +659,18 @@ private:
 		UAS_FCU(m_uas)->send_message_ignore_drop(mcnt);
 	}
 
+	void mission_write_partial_list(uint8_t start_index, uint8_t end_index)
+	{
+		ROS_DEBUG_NAMED("wp", "WP:m: write partial list %u - %u", start_index, end_index);
+
+		mavlink::common::msg::MISSION_WRITE_PARTIAL_LIST mwpl{};
+		m_uas->msg_set_target(mwpl);
+		mwpl.start_index = start_index;
+		mwpl.end_index = end_index;
+
+		UAS_FCU(m_uas)->send_message_ignore_drop(mwpl);
+	}
+
 	void mission_clear_all()
 	{
 		ROS_DEBUG_NAMED("wp", "WP:m: clear all");
@@ -750,9 +762,13 @@ private:
         send_waypoints.reserve(1);
         send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
 
+        wp_count = 1;
+        wp_cur_id = req.seq;
+
         restart_timeout_timer();
         lock.unlock();
 
+        mission_write_partial_list(req.seq,req.seq);
         res.success = wait_push_all();
         lock.lock();
 
