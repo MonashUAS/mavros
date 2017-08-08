@@ -759,13 +759,17 @@ private:
         wp_state = WP::TXLIST;
 
         send_waypoints.clear();
-        send_waypoints.reserve(1);
-        send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
+        //send_waypoints.reserve(req.seq);
+        auto tempfuckery  = WaypointItem::from_msg(req.waypoint,req.seq);
+        send_waypoints[req.seq] = tempfuckery;
 
-        wp_count = 1;
+        //send_waypoints.reserve(1);
+        //send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
+
+        wp_count = send_waypoints.size();
         wp_cur_id = req.seq;
-
         restart_timeout_timer();
+
         lock.unlock();
 
         mission_write_partial_list(req.seq,req.seq);
