@@ -120,7 +120,15 @@ void MAVConnInterface::parse_buffer(const char *pfx, uint8_t *buf, const size_t 
 			log_recv(pfx, message, msg_received);
 
 			if (message_received_cb)
+                        {
+                                mavlink::MsgMap mmap(message);
+                                if(message.msgid == 40){
+                                    mavlink::common::msg::MISSION_REQUEST strc;
+                                    strc.deserialize(mmap);
+                                    std::cout << "here" << std::endl;
+                                }
 				message_received_cb(&message, msg_received);
+                        }
 		}
 	}
 }

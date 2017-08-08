@@ -664,10 +664,11 @@ private:
 		ROS_DEBUG_NAMED("wp", "WP:m: write partial list %u - %u", start_index, end_index);
 
 		mavlink::common::msg::MISSION_WRITE_PARTIAL_LIST mwpl{};
-		m_uas->msg_set_target(mwpl);
 		mwpl.start_index = start_index;
 		mwpl.end_index = end_index;
 
+		ROS_WARN_NAMED("wp", "WP:m: write partial %u", mwpl.start_index);
+		m_uas->msg_set_target(mwpl);
 		UAS_FCU(m_uas)->send_message_ignore_drop(mwpl);
 	}
 
@@ -759,12 +760,13 @@ private:
         wp_state = WP::TXLIST;
 
         send_waypoints.clear();
-        //send_waypoints.reserve(req.seq);
-        auto tempfuckery  = WaypointItem::from_msg(req.waypoint,req.seq);
-        send_waypoints[req.seq] = tempfuckery;
+        send_waypoints.reserve(req.seq);
 
-        //send_waypoints.reserve(1);
-        //send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
+        for (int i = 0; i < req.seq-1; i++) {
+                mavros_msgs::Waypoint wp;
+                send_waypoints.push_back(WaypointItem::from_msg(wp, i));
+        }
+        send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
 
         wp_count = send_waypoints.size();
         wp_cur_id = req.seq;

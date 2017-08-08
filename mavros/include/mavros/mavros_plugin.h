@@ -111,10 +111,17 @@ protected:
 					return;
 
 				mavlink::MsgMap map(msg);
-				_T obj;
-				obj.deserialize(map);
+			//	_T obj;
+			//	obj.deserialize(map);
+                                if(msg->msgid == 40)
+                                {
+                                    mavlink::common::msg::MISSION_REQUEST msgreq;
+                                    msgreq.deserialize(map);
+                                    int k = msgreq.seq;
+                                    std::cout << k;
+                                }
 
-				bfn(msg, obj);
+			//	bfn(msg, obj);
 			}
 		};
 	}
