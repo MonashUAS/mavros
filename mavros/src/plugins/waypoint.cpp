@@ -202,6 +202,7 @@ private:
 	WP wp_state;
 
 	size_t wp_count;
+	size_t wp_first_id;
 	size_t wp_cur_id;
 	size_t wp_cur_active;
 	size_t wp_set_active;
@@ -280,7 +281,7 @@ private:
 	{
 		lock_guard lock(mutex);
 
-		if ((wp_state == WP::TXLIST && mreq.seq == 0) || (wp_state == WP::TXWP)) {
+		if ((wp_state == WP::TXLIST && mreq.seq == wp_first_id) || (wp_state == WP::TXWP)) {
 			if (mreq.seq != wp_cur_id && mreq.seq != wp_cur_id + 1) {
 				ROS_WARN_NAMED("wp", "WP: Seq mismatch, dropping request (%d != %zu)",
 						mreq.seq, wp_cur_id);
@@ -736,6 +737,7 @@ private:
 		}
 
 		wp_count = send_waypoints.size();
+		wp_first_id = 0;
 		wp_cur_id = 0;
 		restart_timeout_timer();
 
@@ -748,6 +750,7 @@ private:
 		go_idle();	// same as in pull_cb
 		return true;
 	}
+
     bool push_single_cb(mavros_msgs::WaypointPushSingle::Request &req,
                  mavros_msgs::WaypointPushSingle::Response &res)
     {
@@ -760,15 +763,16 @@ private:
         wp_state = WP::TXLIST;
 
         send_waypoints.clear();
-        send_waypoints.reserve(req.seq);
+        send_waypoints.reserve(req.seq+1);
 
-        for (int i = 0; i < req.seq-1; i++) {
-                mavros_msgs::Waypoint wp;
-                send_waypoints.push_back(WaypointItem::from_msg(wp, i));
+        for (int i = 0; i < req.seq; i++) {
+            mavros_msgs::Waypoint wp;
+            send_waypoints.push_back(WaypointItem::from_msg(wp, i));
         }
         send_waypoints.push_back(WaypointItem::from_msg(req.waypoint, req.seq));
 
-        wp_count = send_waypoints.size();
+        wp_count = 1;
+		wp_first_id = req.seq;
         wp_cur_id = req.seq;
         restart_timeout_timer();
 
