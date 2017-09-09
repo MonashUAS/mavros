@@ -73,6 +73,7 @@ public:
 
 		// fused global position
 		gp_fix_pub = gp_nh.advertise<sensor_msgs::NavSatFix>("global", 10);
+		gp_fix_rel_alt_pub = gp_nh.advertise<sensor_msgs::NavSatFix>("global_rel_alt", 10);
 		gp_odom_pub = gp_nh.advertise<nav_msgs::Odometry>("local", 10);
 		gp_rel_alt_pub = gp_nh.advertise<std_msgs::Float64>("rel_alt", 10);
 		gp_hdg_pub = gp_nh.advertise<std_msgs::Float64>("compass_hdg", 10);
@@ -107,6 +108,7 @@ private:
 	ros::Publisher raw_vel_pub;
 	ros::Publisher gp_odom_pub;
 	ros::Publisher gp_fix_pub;
+	ros::Publisher gp_fix_rel_alt_pub;
 	ros::Publisher gp_hdg_pub;
 	ros::Publisher gp_rel_alt_pub;
 	ros::Publisher gp_global_origin_pub;
@@ -352,6 +354,8 @@ private:
 
 		// publish
 		gp_fix_pub.publish(fix);
+		fix->altitude = relative_alt->data;
+		gp_fix_rel_alt_pub.publish(fix);
 		gp_odom_pub.publish(odom);
 		gp_rel_alt_pub.publish(relative_alt);
 		gp_hdg_pub.publish(compass_heading);
